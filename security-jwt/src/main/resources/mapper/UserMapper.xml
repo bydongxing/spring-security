@@ -6,6 +6,7 @@
         <collection property="roles" ofType="com.xavier.dong.entity.po.Role" autoMapping="true">
             <id column="r_id" property="id"/>
             <result column="r_name" property="name"/>
+            <result column="r_name_zh" property="nameZh"/>
             <result column="r_create_by" property="createBy"/>
             <result column="r_create_time" property="createTime"/>
             <result column="r_update_by" property="updateBy"/>
@@ -16,7 +17,7 @@
     <select id="findJwtUserByUserName" resultMap="findJwtUserByUserNameMap">
 
 SELECT u.id AS u_id, u.*, r.id AS r_id, r.name AS r_name, r.create_time AS r_create_time, r.create_by AS r_create_by,
-    r.update_by AS r_update_by, r.update_time AS r_update_time
+    r.update_by AS r_update_by, r.update_time AS r_update_time,r.name_zh AS r_name_zh
 FROM user u
          LEFT JOIN user_role ur
 ON u.id = ur.u_id

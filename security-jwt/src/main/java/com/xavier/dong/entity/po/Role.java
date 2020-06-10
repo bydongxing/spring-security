@@ -19,7 +19,7 @@ public class Role extends BaseEntity {
 
     private String name;
 
-    @TableField("nameZh")
+    @TableField("name_zh")
     private String nameZh;
 
 }
