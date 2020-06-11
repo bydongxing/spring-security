@@ -1,0 +1,44 @@
+[
+  {
+    "id": "test",
+    "uri": "http://www.12306.cn/",
+    "order": 0,
+    "predicates": [
+      {
+        "name": "Path",
+        "args": {
+          "patterns": "/123"
+        }
+      }
+    ],
+    "filters": [
+      {
+        "name": "StripPrefix",
+        "args": {
+          "parts": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "test1",
+    "uri": "http://www.taobao.com/",
+    "order": -1,
+    "predicates": [
+      {
+        "name": "Path",
+        "args": {
+          "patterns": "/123"
+        }
+      }
+    ],
+    "filters": [
+      {
+        "name": "StripPrefix",
+        "args": {
+          "parts": 1
+        }
+      }
+    ]
+  }
+]
