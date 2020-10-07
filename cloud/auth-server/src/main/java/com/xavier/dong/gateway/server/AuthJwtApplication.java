@@ -4,7 +4,6 @@ package com.xavier.dong.gateway.server;
 import com.alicp.jetcache.anno.config.EnableMethodCache;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 /**
  *
@@ -12,7 +11,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
  *
  * @author xavierdong
  */
-@EnableDiscoveryClient
+//@EnableDiscoveryClient
 @SpringBootApplication
 @EnableMethodCache(basePackages="com.xavier.dong.auth.server")
 public class AuthJwtApplication {
