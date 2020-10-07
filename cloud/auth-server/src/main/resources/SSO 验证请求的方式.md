@@ -140,3 +140,20 @@
    + ``response_type:`` 固定值：refresh_token
 
    + ``refresh_token:`` 签发 token中所带的 token
+
+#### 六、效验jwt Token
+
+1. 说明
+
+   ```
+   效验 token的值
+   ```
+
+   
+
+2. 调用方法
+
+   ```http
+   curl -X GET --user password:123456 http://localhost:8080/oauth/check_token -H "accept: application/json" -H "content-type: application/x-www-form-urlencoded" -d "token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VyX25hbWUiOiJhZG1pbiIsInNjb3BlIjpbInJlYWQiXSwiZXhwIjoxNjAyMTI4Mjg2LCJhdXRob3JpdGllcyI6WyJST0xFX1RFU1QiLCJST0xFX0FETUlOIl0sImp0aSI6IjUwZmYzNzNjLTc2MWYtNDcyOS04ZDJhLWY1N2I2NmY2Nzc2ZSIsImNsaWVudF9pZCI6InBhc3N3b3JkIiwidXNlcm5hbWUiOiJhZG1pbiJ9.Ev3628-OzwQnpfsk2qg0-iU6KNoV76aHT-4jTkin_hM" 
+   ```
+

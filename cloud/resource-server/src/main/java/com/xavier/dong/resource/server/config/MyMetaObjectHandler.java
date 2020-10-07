@@ -19,6 +19,6 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
 
     @Override
     public void updateFill(MetaObject metaObject) {
-        this.strictUpdateFill(metaObject, "updateBy", String.class, SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+        this.strictUpdateFill(metaObject, "updateBy", String.class, ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername());
     }
 }
