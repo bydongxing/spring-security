@@ -16,9 +16,11 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
 import org.springframework.security.oauth2.provider.token.RemoteTokenServices;
 import org.springframework.security.oauth2.provider.token.ResourceServerTokenServices;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestTemplate;
 
@@ -63,6 +65,13 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
     @Autowired
     private DiscoveryClient discoveryClient;
 
+    @Autowired
+    private DefaultTokenServices tokenServices;
+
+
+    @Autowired
+    private AuthenticationEntryPoint oauthEntryPoint;
+
     @Override
     public void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
@@ -76,7 +85,13 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
 
     @Override
     public void configure(ResourceServerSecurityConfigurer resources) {
-        resources.tokenServices(tokenServices());//.resourceId(SPARKLR_RESOURCE_ID);
+
+        // 自定义oauthEntryPoint
+        resources.authenticationEntryPoint(oauthEntryPoint);
+        resources
+                .tokenServices(tokenServices)
+                .resourceId("xx");
+//        resources.tokenServices(tokenServices());//.resourceId(SPARKLR_RESOURCE_ID);
     }
 
     @Bean

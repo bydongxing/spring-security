@@ -3,14 +3,17 @@ package com.xavier.dong.gateway.server.config;
 import com.google.common.collect.Lists;
 import com.xavier.dong.gateway.server.common.Constant;
 import com.xavier.dong.gateway.server.entity.dto.JwtUser;
-import com.xavier.dong.gateway.server.exception.CustomWebResponseExceptionTranslator;
+import com.xavier.dong.gateway.server.filter.CustomBasicAuthenticationFilter;
 import com.xavier.dong.gateway.server.mobile.MobileTokenGranter;
+import com.xavier.dong.gateway.server.utils.RedisService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,13 +32,14 @@ import org.springframework.security.oauth2.provider.approval.ApprovalStore;
 import org.springframework.security.oauth2.provider.approval.JdbcApprovalStore;
 import org.springframework.security.oauth2.provider.code.AuthorizationCodeServices;
 import org.springframework.security.oauth2.provider.code.JdbcAuthorizationCodeServices;
+import org.springframework.security.oauth2.provider.error.DefaultWebResponseExceptionTranslator;
 import org.springframework.security.oauth2.provider.error.WebResponseExceptionTranslator;
 import org.springframework.security.oauth2.provider.token.TokenEnhancer;
 import org.springframework.security.oauth2.provider.token.TokenEnhancerChain;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
-import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 
+import javax.annotation.Resource;
 import javax.sql.DataSource;
 import java.util.*;
 
@@ -47,31 +51,41 @@ import java.util.*;
 @Configuration
 @EnableAuthorizationServer
 public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdapter {
-    @Autowired
+    @Resource
     private AuthenticationManager authenticationManager;
 
-    @Autowired
+    @Resource
     private DataSource dataSource;
 
-    @Autowired
+    @Resource
     private LettuceConnectionFactory lettuceConnectionFactory;
 
     @Autowired
     @Qualifier("userDetailsService")
     private UserDetailsService userDetailsService;
 
-    @Autowired
+    @Resource
     private JwtConfig jwtConfig;
 
 
-    @Autowired
+    @Resource
     private PasswordEncoder passwordEncoder;
+
+    @Resource
+    private CustomBasicAuthenticationFilter customBasicAuthenticationFilter;
+
+    @Resource
+    private RedisService redisService;
 
     /**
      * 定义授权和令牌端点以及令牌服务
      */
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) {
+
+        // 自定义异常处理
+        endpoints.exceptionTranslator(customExceptionTranslator());
+
         endpoints
                 // 请求方式
                 .allowedTokenEndpointRequestMethods(HttpMethod.GET, HttpMethod.POST)
@@ -92,10 +106,7 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
                 .reuseRefreshTokens(false)
                 //自定义手机验证
                 .tokenGranter(tokenGranter(endpoints));
-        // 自定义异常处理
-        //.exceptionTranslator(new CustomWebResponseExceptionTranslator());
     }
-
 
 
     /**
@@ -105,7 +116,16 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
      */
     @Bean
     public WebResponseExceptionTranslator<OAuth2Exception> customExceptionTranslator() {
-        return new CustomWebResponseExceptionTranslator();
+        return new DefaultWebResponseExceptionTranslator() {
+            @Override
+            public ResponseEntity<OAuth2Exception> translate(Exception e) throws Exception {
+                OAuth2Exception body = OAuth2Exception.create(OAuth2Exception.ACCESS_DENIED, e.getMessage());
+                // 捕获后在返回值添加code、message
+                body.addAdditionalInformation("code", String.valueOf(HttpStatus.UNAUTHORIZED.value()));
+                body.addAdditionalInformation("msg", body.getSummary());
+                return new ResponseEntity<OAuth2Exception>(body, HttpStatus.UNAUTHORIZED);
+            }
+        };
     }
 
 
@@ -114,6 +134,7 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
      */
     @Override
     public void configure(AuthorizationServerSecurityConfigurer oauthServer) {
+        oauthServer.addTokenEndpointAuthenticationFilter(customBasicAuthenticationFilter);
         oauthServer.allowFormAuthenticationForClients().tokenKeyAccess("permitAll()").checkTokenAccess("isAuthenticated()");
     }
 
@@ -156,7 +177,7 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
      */
     @Bean
     public TokenStore tokenStore() {
-        return new JwtTokenStore(accessTokenConverter());
+        return new RedisJwtTokenStore(redisService,accessTokenConverter());
     }
 
 
@@ -186,7 +207,7 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
      * 声明 ClientDetails实现
      */
     public RedisClientDetailsService clientDetailsService() {
-        return new RedisClientDetailsService(dataSource,passwordEncoder);
+        return new RedisClientDetailsService(dataSource, passwordEncoder);
     }
 
 
