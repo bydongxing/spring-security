@@ -46,7 +46,7 @@ public class AuthServiceImpl implements AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         final UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
         final String token = this.jwtTokenUtil.generateToken(userDetails);
-        this.redisService.addMap(Const.HEADER_STRING, userDetails.getUsername(), userDetails, this.jwtConfig.getExpireTime() * 1000);
+        this.redisService.addMap(Const.HEADER_STRING + userDetails.getUsername(), userDetails.getUsername(), userDetails, this.jwtConfig.getExpireTime() * 1000);
         return token;
     }
 
