@@ -1,6 +1,9 @@
 package com.xavier.dong.utils;
 
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.DataType;
@@ -10,25 +13,30 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.regex.Pattern;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
 
 /**
  * redis的工具类
  *
- * @author xavierdong
+ * @author dongxing
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor(onConstructor_={@Autowired} )
 public class RedisService {
 
-    @Autowired
-    protected RedisTemplate redisTemplate;
+    protected final RedisTemplate<String, Object> redisTemplate;
 
     /**
      * 出异常，重复操作的次数
      */
-    private static Integer times = 3;
+    private static final Integer TIMES = 3;
 
     /**
      * 用户排序通过注册时间的 权重值
@@ -47,7 +55,7 @@ public class RedisService {
      * @return
      */
     public Set<String> getAllKeys() {
-        return redisTemplate.keys("*");
+        return this.redisTemplate.keys("*");
     }
 
 
@@ -180,7 +188,7 @@ public class RedisService {
      * @return 返回在list中的下标
      */
     public long addList(String key, Object obj) {
-        return redisTemplate.boundListOps(key).rightPush(obj);
+        return this.redisTemplate.boundListOps(key).rightPush(obj);
     }
 
     /**
@@ -191,7 +199,7 @@ public class RedisService {
      * @return 返回在list中的下标
      */
     public long addList(String key, Object... obj) {
-        return redisTemplate.boundListOps(key).rightPushAll(obj);
+        return this.redisTemplate.boundListOps(key).rightPushAll(obj);
     }
 
     /**
@@ -203,7 +211,7 @@ public class RedisService {
      * @return
      */
     public List<Object> getList(String key, long s, long e) {
-        return redisTemplate.boundListOps(key).range(s, e);
+        return this.redisTemplate.boundListOps(key).range(s, e);
     }
 
     /**
@@ -212,7 +220,7 @@ public class RedisService {
      * @param key
      */
     public List<Object> getList(String key) {
-        return redisTemplate.boundListOps(key).range(0, getListSize(key));
+        return this.redisTemplate.boundListOps(key).range(0, getListSize(key));
     }
 
     /**
@@ -222,7 +230,7 @@ public class RedisService {
      * @return
      */
     public long getListSize(String key) {
-        return redisTemplate.boundListOps(key).size();
+        return this.redisTemplate.boundListOps(key).size();
     }
 
     /**
@@ -236,7 +244,7 @@ public class RedisService {
      * @return 返回移除数量
      */
     public long removeListValue(String key, Object object) {
-        return redisTemplate.boundListOps(key).remove(0, object);
+        return this.redisTemplate.boundListOps(key).remove(0, object);
     }
 
 
@@ -265,7 +273,7 @@ public class RedisService {
             if (keys.length == 1) {
                 remove(keys[0]);
             } else {
-                redisTemplate.delete(CollectionUtils.arrayToList(keys));
+                this.redisTemplate.delete(CollectionUtils.arrayToList(keys));
             }
         }
     }
@@ -278,7 +286,7 @@ public class RedisService {
      */
     public void remove(String key) {
         if (exists(key)) {
-            redisTemplate.delete(key);
+            this.redisTemplate.delete(key);
         }
     }
 
@@ -301,7 +309,7 @@ public class RedisService {
      * @return
      */
     public Boolean renameIfAbsent(String oldKey, String newKey) {
-        return redisTemplate.renameIfAbsent(oldKey, newKey);
+        return this.redisTemplate.renameIfAbsent(oldKey, newKey);
     }
 
     /**
@@ -310,7 +318,7 @@ public class RedisService {
      * @param blear
      */
     public void removeBlear(String blear) {
-        redisTemplate.delete(redisTemplate.keys(blear));
+        this.redisTemplate.delete(this.redisTemplate.keys(blear));
     }
 
     /**
@@ -333,7 +341,7 @@ public class RedisService {
         Set<String> stringSet = getAllKeys();
         for (String s : stringSet) {
             if (Pattern.compile(blear).matcher(s).matches()) {
-                redisTemplate.delete(s);
+                this.redisTemplate.delete(s);
             }
         }
     }
@@ -361,7 +369,7 @@ public class RedisService {
         Set<String> stringSet = map.keySet();
         for (String s : stringSet) {
             if (Pattern.compile(blear).matcher(s).matches()) {
-                redisTemplate.boundHashOps(key).delete(s);
+                this.redisTemplate.boundHashOps(key).delete(s);
             }
         }
     }
@@ -374,7 +382,7 @@ public class RedisService {
      * @return
      */
     public Long removeZSetValue(String key, Object... value) {
-        return redisTemplate.boundZSetOps(key).remove(value);
+        return this.redisTemplate.boundZSetOps(key).remove(value);
     }
 
     /**
@@ -396,7 +404,7 @@ public class RedisService {
      * @return
      */
     public void removeZSetRange(String key, Long start, Long end) {
-        redisTemplate.boundZSetOps(key).removeRange(start, end);
+        this.redisTemplate.boundZSetOps(key).removeRange(start, end);
     }
 
     /**
@@ -409,7 +417,7 @@ public class RedisService {
      * @param key2
      */
     public void setZSetUnionAndStore(String key, String key1, String key2) {
-        redisTemplate.boundZSetOps(key).unionAndStore(key1, key2);
+        this.redisTemplate.boundZSetOps(key).unionAndStore(key1, key2);
     }
 
     /**
@@ -430,7 +438,7 @@ public class RedisService {
      * @param end   结束位置
      */
     public Set<Object> getZSetRange(String key, long start, long end) {
-        return redisTemplate.boundZSetOps(key).range(start, end);
+        return this.redisTemplate.boundZSetOps(key).range(start, end);
     }
 
     /**
@@ -451,7 +459,7 @@ public class RedisService {
      * @param end   结束位置
      */
     public Set<Object> getZSetReverseRange(String key, long start, long end) {
-        return redisTemplate.boundZSetOps(key).reverseRange(start, end);
+        return this.redisTemplate.boundZSetOps(key).reverseRange(start, end);
     }
 
     /**
@@ -463,7 +471,7 @@ public class RedisService {
      * @return
      */
     public Set<Object> getZSetRangeByScore(String key, double start, double end) {
-        return redisTemplate.boundZSetOps(key).rangeByScore(start, end);
+        return this.redisTemplate.boundZSetOps(key).rangeByScore(start, end);
     }
 
     /**
@@ -475,7 +483,7 @@ public class RedisService {
      * @return
      */
     public Set<Object> getZSetReverseRangeByScore(String key, double start, double end) {
-        return redisTemplate.boundZSetOps(key).reverseRangeByScore(start, end);
+        return this.redisTemplate.boundZSetOps(key).reverseRangeByScore(start, end);
     }
 
     /**
@@ -488,7 +496,7 @@ public class RedisService {
      * @return
      */
     public Set<ZSetOperations.TypedTuple<Object>> getZSetRangeWithScores(String key, long start, long end) {
-        return redisTemplate.boundZSetOps(key).rangeWithScores(start, end);
+        return this.redisTemplate.boundZSetOps(key).rangeWithScores(start, end);
     }
 
 
@@ -502,7 +510,7 @@ public class RedisService {
      * @return
      */
     public Set<ZSetOperations.TypedTuple<Object>> getZSetReverseRangeWithScores(String key, long start, long end) {
-        return redisTemplate.boundZSetOps(key).reverseRangeWithScores(start, end);
+        return this.redisTemplate.boundZSetOps(key).reverseRangeWithScores(start, end);
     }
 
     /**
@@ -536,7 +544,7 @@ public class RedisService {
      * @return
      */
     public long getZSetCountSize(String key, double sMin, double sMax) {
-        return redisTemplate.boundZSetOps(key).count(sMin, sMax);
+        return this.redisTemplate.boundZSetOps(key).count(sMin, sMax);
     }
 
     /**
@@ -546,7 +554,7 @@ public class RedisService {
      * @return
      */
     public long getZSetSize(String key) {
-        return redisTemplate.boundZSetOps(key).size();
+        return this.redisTemplate.boundZSetOps(key).size();
     }
 
     /**
@@ -557,7 +565,7 @@ public class RedisService {
      * @return
      */
     public double getZSetScore(String key, Object value) {
-        return redisTemplate.boundZSetOps(key).score(value);
+        return this.redisTemplate.boundZSetOps(key).score(value);
     }
 
     /**
@@ -569,8 +577,32 @@ public class RedisService {
      * @return
      */
     public double incrementZSetScore(String key, Object value, double delta) {
-        return redisTemplate.boundZSetOps(key).incrementScore(value, delta);
+        return this.redisTemplate.boundZSetOps(key).incrementScore(value, delta);
     }
+
+    /**
+     * 自增1
+     *
+     * @param key
+     * @return
+     */
+    public double incrementValue(String key) {
+        return this.incrementValueWithDelta(key, 1);
+    }
+
+
+    /**
+     * 自增,delta是增量
+     *
+     * @param key
+     * @param delta
+     * @return
+     */
+    public double incrementValueWithDelta(String key,double delta) {
+        return this.redisTemplate.boundValueOps(key).increment(delta);
+    }
+
+
 
     /**
      * 添加有序集合ZSET
@@ -581,8 +613,8 @@ public class RedisService {
      * @param value
      * @return
      */
-    public Boolean addZSet(String key, double score, Object value) {
-        return redisTemplate.boundZSetOps(key).add(value, score);
+    public Boolean addZSet(String key, Object value, double score) {
+        return this.redisTemplate.boundZSetOps(key).add(value, score);
     }
 
     /**
@@ -592,8 +624,8 @@ public class RedisService {
      * @param value
      * @return
      */
-    public Long addZSet(String key, SortedSet<Object> value) {
-        return redisTemplate.boundZSetOps(key).add(value);
+    public Long addZSet(String key, Set<ZSetOperations.TypedTuple<Object>> value) {
+        return this.redisTemplate.boundZSetOps(key).add(value);
     }
 
     /**
@@ -606,11 +638,11 @@ public class RedisService {
      */
     public Boolean addZSet(String key, double[] score, Object[] value) {
         if (score.length != value.length) {
-            return false;
+            return Boolean.FALSE;
         }
         for (int i = 0; i < score.length; i++) {
-            if (!Boolean.TRUE.equals(addZSet(key, score[i], value[i]))) {
-                return false;
+            if (addZSet(key, value[i], score[i]).equals(Boolean.FALSE)) {
+                return Boolean.FALSE;
             }
         }
         return true;
@@ -624,7 +656,7 @@ public class RedisService {
      * @param e
      */
     public void removeZSetRangeByScore(String key, double s, double e) {
-        redisTemplate.boundZSetOps(key).removeRangeByScore(s, e);
+        this.redisTemplate.boundZSetOps(key).removeRangeByScore(s, e);
     }
 
     /**
@@ -635,7 +667,7 @@ public class RedisService {
      * @return
      */
     public Boolean setSetExpireTime(String key, Long time) {
-        return redisTemplate.boundSetOps(key).expire(time, TimeUnit.SECONDS);
+        return this.redisTemplate.boundSetOps(key).expire(time, TimeUnit.SECONDS);
     }
 
     /**
@@ -646,7 +678,7 @@ public class RedisService {
      * @return
      */
     public Boolean setZSetExpireTime(String key, Long time) {
-        return redisTemplate.boundZSetOps(key).expire(time, TimeUnit.SECONDS);
+        return this.redisTemplate.boundZSetOps(key).expire(time, TimeUnit.SECONDS);
     }
 
 
@@ -657,7 +689,7 @@ public class RedisService {
      * @return
      */
     public boolean exists(String key) {
-        return redisTemplate.hasKey(key);
+        return this.redisTemplate.hasKey(key);
     }
 
     /**
@@ -688,7 +720,7 @@ public class RedisService {
      * @return
      */
     public Object get(String key) {
-        return redisTemplate.boundValueOps(key).get();
+        return this.redisTemplate.boundValueOps(key).get();
     }
 
 
@@ -751,7 +783,7 @@ public class RedisService {
      * @param value
      */
     public void set(String key, Object value) {
-        redisTemplate.boundValueOps(key).set(value);
+        this.redisTemplate.boundValueOps(key).set(value);
     }
 
     /**
@@ -763,7 +795,7 @@ public class RedisService {
      * @return
      */
     public void set(String key, Object value, Long expireTime) {
-        redisTemplate.boundValueOps(key).set(value, expireTime, TimeUnit.SECONDS);
+        this.redisTemplate.boundValueOps(key).set(value, expireTime, TimeUnit.SECONDS);
     }
 
 
@@ -775,7 +807,7 @@ public class RedisService {
      * @return
      */
     public boolean setExpireTime(String key, Long expireTime) {
-        return redisTemplate.expire(key, expireTime, TimeUnit.SECONDS);
+        return this.redisTemplate.expire(key, expireTime, TimeUnit.SECONDS);
     }
 
     /**
@@ -785,7 +817,7 @@ public class RedisService {
      * @return
      */
     public DataType getType(String key) {
-        return redisTemplate.type(key);
+        return this.redisTemplate.type(key);
     }
 
     /**
@@ -795,16 +827,16 @@ public class RedisService {
      * @param field map中该对象的key
      */
     public void removeMapField(String key, Object... field) {
-        redisTemplate.boundHashOps(key).delete(field);
+        this.redisTemplate.boundHashOps(key).delete(field);
     }
 
     /*
-     * 获取map对象
+     * 获取map对象的数量
      * @param key map对应的key
      * @return
      */
     public Long getMapSize(String key) {
-        return redisTemplate.boundHashOps(key).size();
+        return this.redisTemplate.boundHashOps(key).size();
     }
 
     /*
@@ -813,7 +845,26 @@ public class RedisService {
      * @return
      */
     public Map<String, Object> getMap(String key) {
-        return redisTemplate.boundHashOps(key).entries();
+        Map<Object, Object> entries = this.redisTemplate.boundHashOps(key).entries();
+        return transform(entries, String::valueOf);
+
+    }
+
+    /**
+     * convert {@code Map<K1,V>} to {@code Map<K2,V>}
+     *
+     * @return {@linkplain ImmutableMap}
+     */
+    public static <K1, K2, V> Map<K2, V> transform(Map<K1, V> fromMap, final Function<K1, K2> transformer) {
+        checkNotNull(fromMap, "fromMap is null");
+        checkNotNull(transformer, "transformer is null");
+        // 新的Map对象Key类型已经是K2了，只是Value类型成了Entry
+        ImmutableMap<K2, Entry<K1, V>> k2Entry = Maps.uniqueIndex(fromMap.entrySet(),
+                e -> transformer.apply(e.getKey()));
+        // 再做一次转换将Entry<K1, V>转换成V,这个过程并没有创建新的Map,只是创建了k2Entry的代理对象
+        Map<K2, V> k2V = Maps.transformEntries(k2Entry,
+                (k, v) -> v.getValue());
+        return k2V;
     }
 
     /**
@@ -824,7 +875,7 @@ public class RedisService {
      * @return
      */
     public <T> T getMapField(String key, String field) {
-        return (T) redisTemplate.boundHashOps(key).get(field);
+        return (T) this.redisTemplate.boundHashOps(key).get(field);
     }
 
     /**
@@ -834,7 +885,7 @@ public class RedisService {
      * @return
      */
     public Boolean hasMapKey(String key, String field) {
-        return redisTemplate.boundHashOps(key).hasKey(field);
+        return this.redisTemplate.boundHashOps(key).hasKey(field);
     }
 
     /**
@@ -844,7 +895,7 @@ public class RedisService {
      * @return
      */
     public List<Object> getMapFieldValue(String key) {
-        return redisTemplate.boundHashOps(key).values();
+        return this.redisTemplate.boundHashOps(key).values();
     }
 
     /**
@@ -854,7 +905,7 @@ public class RedisService {
      * @return
      */
     public Set<Object> getMapFieldKey(String key) {
-        return redisTemplate.boundHashOps(key).keys();
+        return this.redisTemplate.boundHashOps(key).keys();
     }
 
     /**
@@ -864,7 +915,7 @@ public class RedisService {
      * @param map
      */
     public void addMap(String key, Map<String, Object> map) {
-        redisTemplate.boundHashOps(key).putAll(map);
+        this.redisTemplate.boundHashOps(key).putAll(map);
     }
 
     /**
@@ -875,7 +926,7 @@ public class RedisService {
      * @param value 值
      */
     public void addMap(String key, String field, Object value) {
-        redisTemplate.boundHashOps(key).put(field, value);
+        this.redisTemplate.boundHashOps(key).put(field, value);
     }
 
     /**
@@ -887,8 +938,8 @@ public class RedisService {
      * @param value 值
      */
     public void addMap(String key, String field, Object value, long time) {
-        redisTemplate.boundHashOps(key).put(field, value);
-        redisTemplate.boundHashOps(key).expire(time, TimeUnit.SECONDS);
+        this.redisTemplate.boundHashOps(key).put(field, value);
+        this.redisTemplate.boundHashOps(key).expire(time, TimeUnit.SECONDS);
     }
 
     /**
@@ -897,7 +948,7 @@ public class RedisService {
      * @param key
      */
     public void watch(String key) {
-        redisTemplate.watch(key);
+        this.redisTemplate.watch(key);
     }
 
     /**
@@ -907,7 +958,7 @@ public class RedisService {
      * @param obj 值
      */
     public void addSet(String key, Object... obj) {
-        redisTemplate.boundSetOps(key).add(obj);
+        this.redisTemplate.boundSetOps(key).add(obj);
     }
 
 
@@ -918,7 +969,7 @@ public class RedisService {
      * @param obj 值
      */
     public long removeSetValue(String key, Object obj) {
-        return redisTemplate.boundSetOps(key).remove(obj);
+        return this.redisTemplate.boundSetOps(key).remove(obj);
     }
 
     /**
@@ -929,7 +980,7 @@ public class RedisService {
      */
     public long removeSetValue(String key, Object... obj) {
         if (obj != null && obj.length > 0) {
-            return redisTemplate.boundSetOps(key).remove(obj);
+            return this.redisTemplate.boundSetOps(key).remove(obj);
         }
         return 0L;
     }
@@ -940,7 +991,7 @@ public class RedisService {
      * @param key 对象key
      */
     public long getSetSize(String key) {
-        return redisTemplate.boundSetOps(key).size();
+        return this.redisTemplate.boundSetOps(key).size();
     }
 
     /**
@@ -949,12 +1000,12 @@ public class RedisService {
      * @param key 对象key
      */
     public Boolean hasSetValue(String key, Object obj) {
-        Boolean boo = false;
+        Boolean flag = Boolean.FALSE;
         int t = 0;
-        while (true) {
+        for (; ; ) {
             try {
-                boo = redisTemplate.boundSetOps(key).isMember(obj);
-                if (Boolean.TRUE.equals(boo) || t > times) {
+                flag = this.redisTemplate.boundSetOps(key).isMember(obj);
+                if (Boolean.FALSE.equals(flag) || t > TIMES) {
                     break;
                 }
             } catch (Exception e) {
@@ -962,8 +1013,8 @@ public class RedisService {
                 t++;
             }
         }
-        log.info("key[" + key + "],obj[" + obj + "]是否存在,boo:" + boo);
-        return boo;
+        log.info("key[" + key + "],obj[" + obj + "]是否存在,flag: [{}]", flag);
+        return flag;
     }
 
     /**
@@ -972,7 +1023,7 @@ public class RedisService {
      * @param key 对象key
      */
     public Set<Object> getSet(String key) {
-        return redisTemplate.boundSetOps(key).members();
+        return this.redisTemplate.boundSetOps(key).members();
     }
 
     /**
@@ -983,18 +1034,18 @@ public class RedisService {
      * @return
      */
     public Set<Object> getSetUnion(String key, String otherKey) {
-        return redisTemplate.boundSetOps(key).union(otherKey);
+        return this.redisTemplate.boundSetOps(key).union(otherKey);
     }
 
     /**
      * 获得set 并集
      *
      * @param key
-     * @param set
+     * @param keys
      * @return
      */
-    public Set<Object> getSetUnion(String key, Set<Object> set) {
-        return redisTemplate.boundSetOps(key).union(set);
+    public Set<Object> getSetUnion(String key, Collection<String> keys) {
+        return this.redisTemplate.boundSetOps(key).union(keys);
     }
 
     /**
@@ -1005,18 +1056,18 @@ public class RedisService {
      * @return
      */
     public Set<Object> getSetIntersect(String key, String otherKey) {
-        return redisTemplate.boundSetOps(key).intersect(otherKey);
+        return this.redisTemplate.boundSetOps(key).intersect(otherKey);
     }
 
     /**
      * 获得set 交集
      *
      * @param key
-     * @param set
+     * @param keys
      * @return
      */
-    public Set<Object> getSetIntersect(String key, Set<Object> set) {
-        return redisTemplate.boundSetOps(key).intersect(set);
+    public Set<Object> getSetIntersect(String key, Collection<String> keys) {
+        return this.redisTemplate.boundSetOps(key).intersect(keys);
     }
 
 }
