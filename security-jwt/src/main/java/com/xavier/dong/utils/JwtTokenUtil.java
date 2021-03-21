@@ -27,6 +27,23 @@ public class JwtTokenUtil implements Serializable {
 
     private static final long serialVersionUID = -5625635588908941275L;
 
+
+    //    private static InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("jwt.jks"); // 寻找证书文件
+//    private static PrivateKey privateKey = null;
+//    private static PublicKey publicKey = null;
+//
+//    static { // 将证书文件里边的私钥公钥拿出来
+//        try {
+//            KeyStore keyStore = KeyStore.getInstance("JKS"); // java key store 固定常量
+//            keyStore.load(inputStream, "123456".toCharArray());
+//            privateKey = (PrivateKey) keyStore.getKey("jwt", "123456".toCharArray()); // jwt 为 命令生成整数文件时的别名
+//            publicKey = keyStore.getCertificate("jwt").getPublicKey();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
+
+
     private static final String CLAIM_KEY_USERNAME = "sub";
     private static final String CLAIM_KEY_CREATED = "created";
 

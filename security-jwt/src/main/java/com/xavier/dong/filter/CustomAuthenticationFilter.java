@@ -38,4 +38,45 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
         } else
             return super.attemptAuthentication(request, response);
     }
+
+
+
+//    @Override
+//    protected void successfulAuthentication(HttpServletRequest request,
+//                                            HttpServletResponse response,
+//                                            FilterChain chain,
+//                                            Authentication authentication) throws IOException, ServletException {
+//
+//        JwtUser userDetails = (JwtUser) authentication.getPrincipal();
+//        final String token = this.jwtTokenUtil.generateToken(userDetails);
+//        this.redisService.set(CacheConstants.PORTAL_TOKEN.concat(userDetails.getUsername()), userDetails, this.jwtConfig.getExpireTime() * 1000);
+//        this.redisService.remove(CacheConstants.PORTAL_LOGIN_FAILED + userDetails.getEmail());
+//        response.getWriter().write(JSON.toJSONString(Result.createBySuccess(token)));
+//    }
+//
+//    @Override
+//    protected void unsuccessfulAuthentication(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AuthenticationException e) throws IOException, ServletException {
+//        String languageCode = StrUtil.isBlank(httpServletRequest.getHeader(LANGUAGE)) ? DEFAULT_LANGUAGE : httpServletRequest.getHeader(LANGUAGE);
+//        PrintWriter printWriter = httpServletResponse.getWriter();
+//        if (e instanceof DisabledException) {
+//            printWriter.write(JSON.toJSONString(errorResultUtil.createErrorResult("10006", languageCode)));
+//            printWriter.flush();
+//            printWriter.close();
+//        }
+////        String username = httpServletRequest.getParameter(UsernamePasswordAuthenticationFilter.SPRING_SECURITY_FORM_USERNAME_KEY);
+//        String username = authenticationBean.getUsername();
+//        double incr = this.redisService.incrementValue(CacheConstants.PORTAL_LOGIN_FAILED + username);
+//        this.redisService.setExpireTime(CacheConstants.PORTAL_LOGIN_FAILED + username, loginFailedConfig.getLogin().getExpiredTime());
+//        if (incr > loginFailedConfig.getLogin().getNum()) {
+//            log.error("[{}] account failed to login for [{}] consecutive times, and the account was disabled for [{}] minutes. ", username, loginFailedConfig.getLogin().getNum(), TimeUnit.SECONDS.toMinutes(loginFailedConfig.getLogin().getExpiredTime()));
+//            printWriter.write(JSON.toJSONString(errorResultUtil.createErrorResult("10006", languageCode)));
+//            printWriter.flush();
+//            printWriter.close();
+//        }
+//        log.error("The user name or password you entered is not correct. In order to ensure the security of your account, the system will lock your account for [" + TimeUnit.SECONDS.toMinutes(loginFailedConfig.getLogin().getExpiredTime()) + "] minutes if you input the wrong user name or password for [" + TimeUnit.SECONDS.toMinutes(loginFailedConfig.getLogin().getExpiredTime())
+//                + "]  consecutive times");
+//        printWriter.write(JSON.toJSONString(errorResultUtil.createErrorResult("10005", languageCode)));
+//        printWriter.flush();
+//        printWriter.close();
+//    }
 }

@@ -13,4 +13,6 @@ import org.springframework.context.annotation.Configuration;
 public class JwtConfig {
     private String security;
     private Long expireTime;
+    private String prefix;
+    private String header;
 }

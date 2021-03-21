@@ -13,7 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
- * 认证失败
+ * 没登录的入口
  * <p>
  * 自定401返回值
  *
