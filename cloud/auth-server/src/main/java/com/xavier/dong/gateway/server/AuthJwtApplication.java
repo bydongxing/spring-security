@@ -13,7 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 //@EnableDiscoveryClient
 @SpringBootApplication
-@EnableMethodCache(basePackages="com.xavier.dong.auth.server")
+@EnableMethodCache(basePackages="com.xavier.dong.gateway.server")
 public class AuthJwtApplication {
 
     public static void main(String[] args) {
